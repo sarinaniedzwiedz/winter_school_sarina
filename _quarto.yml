@@ -1,0 +1,63 @@
+project:
+  type: website
+  output-dir: docs
+  resources: "course_material/_slides/"
+
+website:
+  title: "FACE-IT R workshop"
+  page-navigation: true
+  
+  navbar:
+    background: "#A7D5E8"
+    search: true
+    logo: "images/FACE-IT_Logo_900.png"
+    align: center
+    title: false
+    collapse-below: lg
+    
+    right:
+      - icon: github
+        href: https://github.com/FACE-IT-project/R_workshop
+        aria-label: GitHub
+    
+    left:
+      - text: "Overview"
+        file: index.qmd
+      - text: "R+RStudio"
+        file: R_RStudio.qmd
+      - text: "GitHub"
+        file: GitHub.qmd
+      - text: "Content"
+        file: content.qmd
+        
+  sidebar:
+    - id: content
+      title: "Content"
+      style: "docked"
+      collapse-level: 2
+      align: left
+      contents:
+        - file: content.qmd
+        - file: plots.qmd
+        - file: maps.qmd
+        - file: tidy.qmd
+        - file: wild.qmd
+        - file: workflow.qmd
+        - file: summary.qmd
+        - file: brief.qmd
+        - file: bonus.qmd
+      
+format:
+  html:
+    theme:
+      light: [cosmo, style/FACE-IT_light.scss]
+      dark: [cosmo, style/FACE-IT_light.scss, style/FACE-IT_dark.scss]
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+    mainfont: "Raleway"
+    include-in-header: "style/fontawesome.html"
+
+freeze: auto
+
+editor: source

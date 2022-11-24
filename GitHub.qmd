@@ -1,0 +1,193 @@
+---
+title: "GitHub with RStudio"
+editor: source
+sidebar: false
+link-external-newwindow: true
+---
+
+It may seem like a detour to be setting up a [GitHub](https://github.com/) account on our way to an **R** workshop, but this online tool is centrally important to the best practices for working in RStudio, as we shall see below. If you already have a GitHub account, wonderful! Much of the following information is probably already known to you. So rather spend this time helping the people next to you through the process. Much of the content in this module is taken from the wonderful online book [Happy Git and GitHub for the useR](https://happygitwithr.com/index.html), which provides a much more in-depth view of what Git is, the many ways we can use it, and many tips and tricks for any errors encountered below. For practical purposes, in this module we are going to focus directly on what we need to know to connect RStudio to GitHub in order to manage RStudio Projects.
+
+At the outset of this module we must acknowledge that there are many other Git based online (and desktop) resources that one may use in an R/RStudio workflow. We choose to focus on GitHub in this workshop because it is the best integrated, supported, and documented option. Meaning that not only is it the easiest to use 'out of the box', if we encounter any issues after this workshop it will be easiest to search for solutions for GitHub. Note however that GitHub is owned by Microsoft, which is why many people have switched over to [GitLab](https://about.gitlab.com/). If anyone is interested in the finer points of this discussion, please let the instructor know.
+
+## Create a GitHub account
+
+As with any online resource in the digital age, we must first setup an account. To do so, go to the [GitHub]() home page, click 'Sign up' in the top right, and follow the prompts. You will need an e-mail address to complete this process, but there is otherwise no cost **BONUS:** if you have an academic e-mail address you should be able to register for an academic account, which provides some of the benefits of a paid account, but for free! If you experience any issues in this process try consulting the [GitHub help page](https://docs.github.com/en/get-started/signing-up-for-github/signing-up-for-a-new-github-account).
+
+## Install Git
+
+The Git software comes standard on MacOS and all Linux distributions. If you have one of these Operating Systems, run the following code in a Bash shell (i.e. Terminal) to check that you have it:
+
+``` bash
+which git
+```
+
+And if you do, check your version:
+
+``` bash
+git --version
+```
+
+Close RStudio before proceeding with the installation of Git for a specific Operating System.
+
+### Windows
+
+There is a one-stop-shop for all of your Git needs in the form of [Git for Windows](https://gitforwindows.org/). Navigate to this page, download the file, and follow the prompts to install. Generally the default options are acceptable, with two important considerations:
+
+1.  For the 'Adjusting your PATH environment' prompt, ensure that you choose 'Git from the command line and also from 3rd-party software'
+
+2.  The ideal location to install Git is `C:/Program Files`, doing otherwise may cause problems later on
+
+If you already have Git installed for Windows, run the following line in your Terminal to check that it is up-to-date:
+
+``` bash
+git update-git-for-windows
+```
+
+### MacOS
+
+Open a Terminal and run:
+
+``` bash
+xcode-select --install
+```
+
+### Linux
+
+Ubuntu or Debian Linux:
+
+``` bash
+sudo apt-get install git
+```
+
+Fedora or RedHat Linux:
+
+``` bash
+sudo yum install git
+```
+
+### Set user info
+
+With Git installed, we need to tell it our username and e-mail. This isn't linked to anything else on our computer, but it will appear during our workflow between RStudio and Github. Primarily this information is useful when we are working on a project with other people so they can see who made what changes when. Preferably one should use the same e-mail account here as that for used for the GitHub account.
+
+In a Terminal:
+
+``` bash
+git config --global user.name 'Jane Doe'
+git config --global user.email 'jane@example.com'
+git config --global --list
+```
+
+## SSH key
+
+While it is possible to connect RStudio to GitHub using the username and password we created above for GitHub (i.e. HTTPS connection), this quickly becomes tedious because we must provide this info every time we upload something. Rather it is better to spend a few minutes now setting up an SSH key so that we can focus more on our work, and not remembering usernames and passwords. There are best practices on the management of SSH keys (i.e. changing them once a year), but we won't get into that here.
+
+### Create a key
+
+Open RStudio and go to: *Tools \> Global Options...\> Git/SVN \> Create RSA Key...*. Note that if there is a file pathway in the text box above the 'Create RSA Key...' button this means you already have an SSH key. If not, click 'Create' and RStudio will generate one for you. It will prompt you for a passphrase. This isn't necessary for now and can be skipped. If you want to create a new SSH key with a passphrase later circle back to this step. Adding a passphrase will require additional steps that are not listed below and can be found [here](https://happygitwithr.com/ssh-keys.html).
+
+### Add key to ssh-agent
+
+#### MacOS
+
+Check that ssh-agent is enabled (the `pid` may vary):
+
+``` bash
+~ % eval "$(ssh-agent -s)"
+```
+
+On MacOS Sierra 10.12.2 and higher create a `~/.ssh/config` file with this text inside:
+
+    Host *
+      AddKeysToAgent yes
+      IdentityFile ~/.ssh/id_ed25519
+
+### Windows
+
+In the Git Bash Shell:
+
+``` bash
+$ eval $(ssh-agent -s)
+```
+
+Add your key (change the name to match whatever you chose above):
+
+``` bash
+$ ssh-add ~/.ssh/id_ed25519
+```
+
+### Linux
+
+Check that ssh-agent is running:
+
+``` bash
+$ eval "$(ssh-agent -s)"
+```
+
+Add your key (change name as necessary):
+
+``` bash
+ssh-add ~/.ssh/id_ed25519
+```
+
+## SSH to GitHub
+
+In RStudio: *Tools \> Global Options...\> Git/SVN.*. If your key is connected, there should be a 'View public key' option to click on. Do so and accept the offer to copy to clipboard. Or do so manually if not prompted.
+
+In GitHub: *Settings \> SSH and GPG keys*. Click the green 'New SSH key' button in the top right. Paste the SSH key you copied from RStudio in the 'Key' box and give it a name that makes sense to you. Finish by clicking 'Add SSH key'.
+
+## GitHub and RStudio
+
+Now that we have Git sorted on our computers and we have created an SSH key for GitHub we may connect our RStudio Projects to GitHub. To do so we must first create a new repository. On your GitHub account click the green 'New' button.
+
+Start with the following info for testing purposes:
+
+-   Repository name: `winter_school_yourname` (or whatever you like)
+-   Description: Repository for code and notes taken during FACE-IT 2022 winter R workshop
+-   Public
+-   Initialize this repository with: (X) Add a README file
+
+Then click the green `Create repository` button.
+
+To connect this repo to our RStudio we must first copy the link. Do so by clicking on the green 'Code' button in the top right. Select the 'SSH' option and cop the text below. It should look something like: `git@github.com:yourusername/winter_school_yourname.git`
+
+In RStudio: *File \> New Project \> Version Control \> Git* and paste the link in 'Repository URL'. Before you click ' Create Project' note where RStudio intends to save the files and change this if desired.
+
+You should now see a window open that shows that RStudio is downloading your files to your computer. Let's open the README.md file in RStudio, add a bit of text, and save the changes. Now that we have made changes we can upload them back to GitHub. This is done via the *Git* tab in the *Environment* pane, which is in the top right by default.
+
+### Specific terms
+
+The process of uploading the changes to our code to GitHub is not complex, but the technical terms used are very generic and easy to confuse. Therefore we have them set out below in bullet points for ease of reference over the following week of the workshop:
+
+-   **Commit**: This is the term used to describe the process of saving any changes you have made to your code (and files etc.) locally on your computer
+    -   To access this click the 'Commit' button within the *Git* tab
+    -   This opens a new window showing which files where changed, and which lines were added (green) or deleted (red)
+    -   Click the check box next to each file you want to commit and then write a short message explaining what was done
+    -   Clicking the 'Commit' button will save these changes and the attached message locally on your machine via the Git software
+-   **Push**: This is the term used to describe the process of uploading data from your local machine to your GitHub account
+    -   Note that you cannot push anything until you have commit it locally
+-   **Pull**: This is how we download new code, files, etc. from our GitHub repository to our local machine
+    -   This is generally used when we are collaborating with other people
+    -   If you are only working by yourself, on just one computer, you won't use this often
+
+## Exercise 1
+
+::: application-exercise
+**Push your repo from RStudio to GitHub**
+
+Using the definitions for the key-terms above successfully upload your changes to Github. Once you think you have succeeded, go to the repo page on your GitHub account and check that the changes have appeared.
+:::
+
+## More options
+
+There are many things that can be done via Git, GitHub, and/or RStudio. We won't go into all of them here, but we will look at one example. Go to the [repository](https://github.com/FACE-IT-project/R_workshop) for this workshop and copy the 'Code' link. Start a new RStudio Project following the same steps as above but use the new link.
+
+After following the prompts it should download all of the source code for this site, and the extra course content, to your local computer. This is just one example of how we can share code and documents with a wide range of collaborators.
+
+## Exercise 2
+
+::: application-exercise
+**Collaboration via GitHub**
+
+Pair up with a buddy and practice pulling each others repositories, making changes, and pushing them back.
+Once you are comfortable with this, find a new buddy and repeat the process.
+:::

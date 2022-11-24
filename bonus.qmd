@@ -1,0 +1,965 @@
+---
+title: "Bonus"
+editor: source
+---
+
+```{r bonus-opts, echo=FALSE}
+knitr::opts_chunk$set(
+  comment = "R>", 
+  warning = FALSE, 
+  message = FALSE,
+  eval = FALSE
+)
+```
+
+# Animations
+
+In this supplemental tutorial we are going to look at how to create animations in R. To do this will require the installation of software outside of R. This software is `ImageMagick` and may be downloaded here: <https://www.imagemagick.org/script/download.php>. Once this software has been installed on your computer it will be necessary to install the `animation` library.
+
+```{r, warning=FALSE, message=FALSE}
+# The libraries required for this tut
+library(tidyverse)
+library(grid)
+library(gridExtra)
+# install.packages("animation")
+library(animation)
+```
+
+## Functions for creating ant walks
+
+```{r}
+# Calculate speed based on u and v vectors
+ant.speed <- function(df){
+  df$x2 <- c(NA,df$x[2:nrow(df)] - df$x[1:(nrow(df)-1)])
+  df$y2 <- c(NA,df$y[2:nrow(df)] - df$y[1:(nrow(df)-1)])
+  speed_abs <- round(sqrt(df$x2^2 + df$y2^2),2)
+  speed_abs[is.na(speed_abs)] <- 0
+  return(speed_abs)
+}
+
+# Create a dataframe with desired number of ants and steps
+ant.walk <- function(i,n){
+  # Create the random walks
+  walk_x <- c(0,round(cumsum(rnorm(n = n-1, mean = 0, sd = 1)),2))
+  for(i in 2:i){
+  x <- c(0,round(cumsum(rnorm(n = n-1, mean = 0, sd = 1)),2))
+  walk_x <- c(walk_x, x)
+  }
+  walk_y <- c(0,round(cumsum(rnorm(n = n-1, mean = 0, sd = 1)),2))
+  for(i in 2:i){
+  y <- c(0,round(cumsum(rnorm(n = n-1, mean = 0, sd = 1)),2))
+  walk_y <- c(walk_y, y)
+  }
+  # Create the walking dataframe
+  walker <- data.frame(x = walk_x, y = walk_y, 
+                       ant = as.factor(rep(1:i, each = n)), 
+                       step =  rep(seq(1,n), i))
+  walker$speed <- ant.speed(walker)
+  walker$speed[walker$step == 1] <- 0
+  return(walker)
+}
+```
+
+## Generate the ants
+
+```{r}
+ants <- ant.walk(5, 100)
+```
+
+## The function to animate the walk plot
+
+```{r, message=FALSE, warning=FALSE}
+walk.plot <- function(i){
+  # Map figure
+  walk_map <- ggplot(data = ants[ants$step %in% 1:i,], aes(x = x, y = y)) +
+    geom_path(aes( group = ant), colour = "gray60") +
+    geom_point(data = ants[ants$step == i,], aes(colour = ant))
+  # Speed histogram
+  walk_hist <- ggplot(data = ants[ants$step %in% 1:i,], aes(x = speed)) +
+    geom_histogram() +
+    labs(x = "speed")
+  # Speed line graph
+  walk_line <- ggplot(data = ants[ants$step %in% 1:i,], aes(x = step, y = speed)) +
+    geom_line(aes(colour = ant))
+  # Wack it together
+  grid.arrange(walk_map, walk_hist, walk_line, layout_matrix = cbind(c(1,1), c(1,1), c(2,3)))
+}
+
+
+## Create animation of ts plots
+animate.walk.plot <- function() {
+  lapply(seq(1,100), function(i) {
+    walk.plot(i)
+  })
+}
+```
+
+## Render the GIF
+
+```{r, eval=FALSE}
+# By default 'saveGIF()' outputs to the same folder 
+# the script where the code is being run from is located
+# I have included commented out lines of code here that 
+# may be changed to set thedestination for saving the output
+# setwd("~/Intro_R_Workshop/BONUS/")
+system.time(saveGIF(animate.walk.plot(), interval = 0.2, 
+                    ani.width = 800, movie.name = "ant_walk.gif")) ## ~60 seconds
+# setwd("~/Intro_R_Workshop/")
+```
+
+# Basic statistics
+
+In this quick tutorial we are going to look at how to perform some basic statistical tests. Before we do so, let's remind ourselves how to test the two most common assumptions we must make for any comparison of means test. These are kurtosis and homoscedasticity. Or rather in common parlance, normality of distribution and equality of variance.
+
+We will use the `laminaria` and `SACTN` data for our examples below in order to practice running the numbers.
+
+```{r basic-stats-load}
+# Load libraries
+library(tidyverse)
+library(ggpmisc)
+library(pgirmess)
+
+# Load data
+laminaria <- read_csv("../data/laminaria.csv")
+SACTN <- read_csv("../data/SACTN_data.csv")
+```
+
+With the libraries and data loaded, we will also create a couple of smaller dataframes from the Laminaria data to make it easier to perform our t-tests.
+
+```{r basic-stats-prep}
+# Be careful here as we are overwriting our raw data
+lam_1 <- laminaria %>% 
+  select(region, site, total_length)
+
+# Create dataframe with a couple of morphometric properties
+lam_2 <- laminaria %>% 
+  select(region, site, digits, blade_length)
+```
+
+## Testing assumptions
+
+To test the normality of the distribution of a set of data we may use the `shapiro.test()` function. This produces a 'w' score as well as a *p*-value, but for now we are only interested in the later. Anything above *p* = 0.05 may considered to be normally distributed.
+
+To test for similarity of variance we will run the `var()` function. As long as no group of data has \~4 times greater variance than any other group we are comparing it against it will pass this test.
+
+With the help of the `%>%` we may test all of our assumptions in one pass.
+
+```{r basic-stats-ass}
+# First test the Laminaria data by region
+  # This passes our tests
+lam_norm_region <- laminaria %>%
+  group_by(region) %>% 
+  summarise(norm_length = shapiro.test(total_length)[2],
+            var_length = var(total_length)) %>% 
+  ungroup()
+
+# Then test by site
+  # This no longer passes our tests
+lam_norm_site <- laminaria %>%
+  group_by(site) %>% 
+  summarise(norm_length = shapiro.test(total_length)[2],
+            var_length = var(total_length)) %>% 
+  ungroup()
+
+# Lastly we test the SACTN data
+  # Which also fails
+SACTN_norm <- SACTN %>% 
+  group_by(index) %>% 
+  summarise(norm_temp = shapiro.test(temp)[2],
+            var_temp = var(temp, na.rm = T))
+```
+
+## Comparison of two means
+
+To run a t-test we use `t.test()`. The argument this function wants is in the form of a formula. This requires to bits of information separated by a `~`. On the left we provide the name of the column containing the variable we want to compare between two groups. On the right we put the column containing the grouping variable. The second argument we provide is `data = x`, where we tell R what the name of the dataframe is that contains the columns we have fed to the formula.
+
+```{r basic-stats-t-test}
+t.test(total_length ~ region, data = laminaria)
+```
+
+Happily the Laminaria data, when separated by region, pass our assumption tests. Had they not, we would need to use a Wilcox test instead of a t-test. Note that the arguments are written the exact same for both functions.
+
+```{r basic-stats-wilcox}
+wilcox.test(total_length ~ region, data = laminaria)
+```
+
+## Comparison of multiple means
+
+The function we use to compare multiple means that pass our assumption tests (parametric data) are `aov()` for an ANOVA and for non-parametric data we use `kruskal.test()` for a Kruskal-Wallis test. To see the difference between the individual factor levels within our multiple means comparisons tests we use `TukeyHSD()` for parametric data and `kruskalmc()` for non-parametric data. Note that `aov()` does not by defalut output the information we are after so we wrap it inside of `summary()`. Note that the Laminaria and SACTN data violate our assumptions. We should therefore not perform paramteric tests on them. We do so below to highlight how these tests work should one have parametric data to use.
+
+```{r}
+# Look at the significance results for Laminaria total lengths
+summary(aov(total_length ~ site, data = laminaria))
+
+# Look at the Tukey test results
+TukeyHSD(aov(total_length ~ site, data = laminaria))
+
+# Multi-level ANOVA
+  # Interaction between factorial levels
+summary(aov(total_length ~ region * site, data = laminaria))
+
+TukeyHSD(aov(total_length ~ region * site, data = laminaria))
+
+# Single level non-parametric test
+kruskal.test(total_length ~ as.factor(site), data = laminaria)
+
+# Post-test
+kruskalmc(total_length ~ as.factor(site), data = laminaria)
+
+```
+
+## Correlation
+
+To check for the correlation between multiple values we may use `cor()`. This may be done in the pipe very quickly, but we have also provided below how to perfomr this test using the base R syntax.
+
+```{r base-stats-cor}
+# Using the pipe
+  # This allows us to compare multple columns of our choosing easily
+laminaria %>% 
+  select(-(region:Ind)) %>% 
+  cor(., use = "complete.obs")
+
+# Or base R syntax
+  # Here we must specify individual columns
+cor(laminaria$digits, laminaria$blade_length)
+```
+
+## Regression analysis
+
+The last analysis we will look at in this tut is regression analysis. This is performed by running a linear model, `lm()`, on two columns of data. We do so with the formula notation that we saw earlier but now the righ side of the `~` contains the dependant variable, and the left side the independent.
+
+```{r basic-stats-r2}
+# The summary
+summary(lm(stipe_diameter ~ stipe_mass, data = laminaria))
+
+# Plot the R2 value
+ggplot(data = laminaria, aes(x = stipe_mass, y = stipe_diameter)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  stat_poly_eq(formula = y ~ x, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE)
+```
+
+# Data mangling
+
+This script shows the steps I took to prepare the mangled dataframes used in the tidy data examples in this workshop.
+
+```{r mangle-load}
+# Load libraries
+library(tidyverse)
+library(lubridate)
+
+# Load data
+sst_NOAA <- read_csv("course_material/data/sst_NOAA.csv")
+```
+
+## Mangle
+
+And now begins the mangling.
+
+```{r mangle-main, eval=FALSE}
+# Sites to extract
+sites <- c("Med", "NW_Atl", "WA")
+
+# Create tidy base
+OISST_tidy <- sst_NOAA %>%
+  mutate(year = year(t)) %>%
+  filter(site %in% sites,
+         year %in% c(2008, 2009)) %>%
+  select(-year)
+
+# First mangle
+  # Normal tidy data
+OISST1 <- OISST_tidy
+
+# Second mangle
+OISST2 <- OISST_tidy %>%
+  pivot_wider(names_from = site, values_from = temp)
+
+# Third mangle
+OISST3 <- OISST_tidy %>%
+  mutate(t = as.character(t),
+         idx = 1:n()) %>% 
+  pivot_longer(cols = c(site, t), names_to = "type", values_to = "name") %>% 
+  dplyr::select(idx, type, name, temp)
+
+## Fourth two part mangle
+# A
+OISST4a <- OISST_tidy %>%
+  mutate(t = as.character(t)) %>%
+  unite(index, site, t, sep = " ")
+
+# B
+OISST4b <- OISST_tidy %>%
+  mutate(t = as.character(t),
+         idx = 1:n()) %>%
+  separate(col = t, into = c("year", "month", "day"), sep = "-") %>%
+  select(-temp)
+```
+
+## Save
+
+Here we save all five of the newly mangled dataframes as one .RData object for ease of loading in the tutorial.
+
+```{r, eval=FALSE}
+save(list = c("OISST1", "OISST2", "OISST3", "OISST4a", "OISST4b"), file = "course_material/data/OISST_mangled.RData")
+```
+
+# Dates
+
+This script covers some of the more common issues we may face while dealing with dates.
+
+```{r dates-load}
+# Load libraries
+library(tidyverse)
+library(lubridate)
+library(zoo)
+
+# Load data
+sad_dates <- read.csv("../data/sad_dates.csv")
+```
+
+## Date details
+
+Look at strip time format for guidance
+
+```{r dates-details-1}
+?strptime
+```
+
+Check the local time zone
+
+```{r dates-details-2}
+Sys.timezone(location = TRUE)
+```
+
+## Creating daily dates
+
+Create date columns out of the mangled date data we have loaded.
+
+```{r dates-creating-daily}
+# Create good date column
+new_dates <- sad_dates %>%
+  mutate(new_good = as.Date(good))
+
+# Correct bad date column
+new_dates <- new_dates %>%
+  mutate(new_bad = as.Date(bad, format = "%m/%d/%y"))
+
+# Correct ugly date column
+new_dates <- new_dates %>%
+  mutate(new_ugly = seq(as.Date("1998-01-13"), as.Date("1998-01-21"), by = "day"))
+```
+
+## Creating hourly dates
+
+If we want to create date values out of data that have hourly values (or smaller), we must create 'POSIXct' valus because 'Date' values may not have a finer temporal resolution than one day.
+
+```{r dates-creating-hourly}
+# Correcting good time stamps with hours
+new_dates <- new_dates %>%
+  mutate(new_good_hours = as.POSIXct(good_hours, tz = "Africa/Mbabane"))
+
+
+# Correcting bad time stamps with hours
+new_dates <- new_dates %>%
+  mutate(new_bad_hours = as.POSIXct(bad_hours, format = "%Y-%m-%d %I:%M:%S %p", tz = "Africa/Mbabane"))
+
+
+# Correcting bad time stamps with hours
+new_dates <- new_dates %>%
+  mutate(new_ugly_hours = seq(as.POSIXct("1998-01-13 09:00:00", tz = "Africa/Mbabane"),
+                              as.POSIXct("1998-01-13 17:00:00", tz = "Africa/Mbabane"), by = "hour"))
+```
+
+But shouldn't there be a function that loads dates correctly?
+
+## Importing dates in one step
+
+Why yes, yes there is. `read_csv()` is the way to go.
+
+```{r dates-better}
+smart_dates <- read_csv("../data/sad_dates.csv")
+```
+
+But why does it matter that we correct the values to dates? For starters, it affects the way our plots look/work. Let's create some random numbers for plotting and see how these compare against our date values when we create figures.
+
+```{r dates-deeper-1}
+# Generate random number
+smart_dates$numbers <- rnorm(9, 2, 10)
+
+# Scatterplot with correct dates
+ggplot(smart_dates, aes(x = good, y = numbers)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+
+# Scatterplot with incorrect dates
+ggplot(smart_dates, aes(x = bad, y = numbers)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+# OR
+ggplot(smart_dates, aes(x = ugly, y = numbers)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+```
+
+If the dates are formatted correctly it also allows us to do schnazy things with the data.
+
+```{r dates-deeper-2}
+smart_dates$good[4]+32
+smart_dates$good[9]-smart_dates$good[3]
+as.Date(smart_dates$good[9]:smart_dates$good[3])
+smart_dates$good[9]-10247
+```
+
+# GIF
+
+Yes my friends, it is true. We may add GIFs to our figures and maps. Rejoice. Better yet, the process is relatively straight forward. We will begin, as usual, by loading our libraries and files.
+
+```{r gif-load}
+# Load libraries
+library(tidyverse)
+library(magick)
+
+# The base image
+background <- image_read("../data/air_panel.png") %>% # Load file
+  image_scale("900") # Change resolution
+
+# The gif to overlay
+anim_overlay <- image_read("../data/carlton_dance.gif")  %>% # Load file 
+  image_scale("300") # Change resolution
+```
+
+## GIF creation
+
+Once we have loaded our base image and the GIF we want to put on top of it we need to create a function to make these two different file types 'kiss'. With the appropriately named **`magick`** package this is startlingly easy to do.
+
+```{r gif-func}
+frames <- lapply(anim_overlay, function(frame) {
+  image_composite(background, frame, offset = "+300")
+})
+```
+
+## GIF animation
+
+With our function for creating the GIF sorted, it is now time to animate it!
+
+```{r gif-anim}
+animation <- image_animate(image_join(frames), fps = 10) # FPS = 10 is native speed
+```
+
+## GIF save
+
+Jip. Simple as that.
+
+```{r gif-save, eval=FALSE}
+image_write(animation, "../BONUS/carlton.gif")
+```
+
+# Mapping yourself
+
+Yes friends, it is true. Through the magic of the evil empire that is Google, we may indeed map ourselves. Because Google is kind enough to allow us to access our own data, we may see every single thing it records about where we go, what we do, what we say, etc. Isn't that exciting! For today we are only interested in the data Google collects about where we have gone. But don' worry, we aren't going to be zooming in on the data very closely, so the person sitting next to you won't be able to tell if you've been going anywhere particularly naughty.
+
+## **`jsonlite`**
+
+With new R capabilities comes the requirement for at least one new package. So let's go ahead and install that.
+
+```{r, message=FALSE}
+library(tidyverse)
+
+# Package for reading JSON data
+# install.packages("jsonlite")
+library(jsonlite)
+
+# Package for dealing with spatial data
+# install.packages("raster")
+library(raster)
+
+# Packages for changing dates
+# install.packages("lubridate")
+library(lubridate)
+# install.packages("zoo")
+library(zoo)
+
+# Packages for plotting
+library(ggmap)
+
+# A script containing several custom functions
+source("markdown/mapping_yourself_func.R")
+```
+
+To download your Google location history please sign in to your Google account (if you aren't already) and then click the following link: <https://takeout.google.com/settings/takeout>. Once you are at the download page please make sure you select *only* "location history" for download, otherwise you will be waiting a long time for the download to finish.
+
+The format of the data you will download is .json. Don't worry about this as we now have the `jsonlite` package to do the hard work for us. It may take your computer a couple of minutes to load your data into R. Some of your files may be quite large if Google has been tracking you more closely...
+
+```{r}
+# Note that this file is not in the Intro R Workshop folder
+# You will need to download your own data to follow along
+# I may provide you with my history if you have none
+# location_history <- fromJSON("data/LocationHistory.json")
+# save(location_history, file = "data/location_history.Rdata")
+load("../data/location_history.RData")
+```
+
+## Check the data
+
+With our Google location history data loaded into R we may now start to clean it up so we can create maps and perform analyses.
+
+```{r}
+# extract and clean the locations dataframe
+loc <- location.clean(location_history)
+```
+
+Now that we've cleaned up the data, let's see what we're dealing with.
+
+```{r}
+# Number of times our position was recorded
+loc %>% 
+  nrow()
+# The date Google started tracking us
+loc %>%
+  summarise(min(time))
+# The most recent date in Googles memory banks
+loc %>%
+  summarise(max(time))
+```
+
+To calculate the number of days, months and years of data Google has on us we will use the following code.
+
+```{r, message=FALSE}
+# Count the number of records per day
+points_p_day <- loc %>% 
+  group_by(date) %>%
+  summarise(count = n()) %>% 
+  mutate(group = "day")
+
+# Count the number of records per month
+points_p_month <- loc %>% 
+  group_by(month_year) %>%
+  summarise(count = n()) %>% 
+  mutate(group = "month") %>% 
+  rename(date = month_year)
+
+# Count the number of records per year
+points_p_year <- loc %>% 
+  group_by(year) %>%
+  summarise(count = n()) %>% 
+  mutate(group = "year") %>% 
+  rename(date = year)
+
+# Number of days/ months/ years recorded
+nrow(points_p_day)
+nrow(points_p_month)
+nrow(points_p_year)
+```
+
+## Where in the world are you?
+
+If this hasn't been creepy enough, just wait, there's more! Now we are going to create maps from the data collected on us. Due to the impressive quality of these data there are quite a few sophisticated things we may do with them. We will work through several examples together. The first will be a boxplot.
+
+```{r google-boxplot}
+# First create a dataframe for all of your points of data
+# The [, -1] is removing the 'date' column from each dataframe
+points <- rbind(points_p_day[,-1], points_p_month[,-1], points_p_year[,-1])
+
+# Now for the figure
+ggplot(points, aes(x = group, y = count)) + # The base of the mfigure
+  geom_boxplot(aes(colour = group), size = 1, outlier.colour = NA) + # The boxplot
+  geom_point(position = position_jitter(width = 0.2), alpha = 0.3) + # Our data points
+  facet_grid(group ~ ., scales = "free") + # Facet by day/ month/ year
+    labs(x = "", y = "Number of data points") + # Change the labels
+  theme(legend.position = "none", # Remove the legend
+    strip.background = element_blank(), # Remove strip background
+    strip.text = element_blank()) # Remove strip text
+```
+
+This shows us how many data points Google tends to collect about us every day, month and year. Why did we plot each boxplot in it's own panel?
+
+Up next we will look at the map of all of these points.
+
+```{r googlemap-self-1, warning=FALSE, message=FALSE}
+# First we must download the  map of South Africa
+# south_africa <- get_map(location = 'GSouth Africa', zoom = 5)
+load("../data/south_africa.RData")
+
+# Then we may plot our points on it
+ggmap(south_africa) + 
+  geom_point(data = loc, aes(x = lon, y = lat), 
+             alpha = 0.5, colour = "red") + 
+  labs(x = "", y = "")
+```
+
+Now let's focus on the Cape Town area specifically.
+
+```{r googlemap-self-2, warning=FALSE, message=FALSE}
+# Download Cape Town map
+# cape_town <- get_map(location = 'Cape Town', zoom = 12)
+load("../data/cape_town.RData")
+
+# Create the map
+ggmap(cape_town) + 
+  geom_point(data = loc, aes(x = lon, y = lat), 
+             alpha = 0.5, colour = "khaki") +
+  labs(x = "", y = "")
+```
+
+Remember earlier how I said these Google data were very high quality and we could do all sorts of analyses with them? One of the additional things Google tracks is our velocity. So we don't even need to calculate it. We may just plot it as is.
+
+```{r googlemap-self-3, warning=FALSE, message=FALSE}
+# Create a data frame with no NA values for velocity
+loc_2 <- loc %>% 
+  na.omit(velocity)
+
+ggmap(cape_town) + 
+  geom_point(data = loc_2, 
+             aes(x = lon, y = lat, colour = velocity), alpha = 0.3) + 
+  scale_colour_gradient(low = "blue", high = "red", 
+                        guide = guide_legend(title = "Velocity")) +
+  labs(x = "", y = "")
+```
+
+If the map above is too zoomed in to see your data try changing the level of the `zoom` argument.
+
+## Big Brother
+
+For the end of this session we are going to perform two more analyses. The first will be to see how far Google knows that we travel when it is tracking us. And from that we will then understand how Google guesses what it thinks we are doing. Yes, Google's data mining algorithms do think about what you do and record those assumptions. Another service provided by your friendly neighbourhood SkyNet.
+
+```{r googlemap-self-4, warning=FALSE}
+# Create a distance dataframe
+distance_p_month <- distance.per.month(loc)
+
+# The distance in KM's Google has tracked you
+distance_p_month %>% 
+  summarise(sum(distance))
+
+# A bar plot of the distances tracked
+ggplot(data = distance_p_month, 
+       aes(x = month_year, y = distance,  fill = as.factor(month_year))) +
+  geom_bar(stat = "identity")  +
+  guides(fill = FALSE) +
+  labs(x = "", y = "Distance (km)")
+```
+
+Lastly, let's take a peek at what it is Google thinks we are doing with ourselves. Because Google records activity probabilities for each tick of its watch, only the activity with highest likelihood at that time is chosen.
+
+```{r}
+# Create the activities dataframe
+activities <- activities.df(location_history)
+
+# The figure
+ggplot(data = activities, 
+       aes(x = main_activity, group = main_activity, fill = main_activity)) +
+  geom_bar()  +
+  guides(fill = FALSE) +
+  labs( x = "", y = "Count")
+```
+
+# Morphing
+
+Have you ever wanted to animate the transition from one figure to another? No? Me neither. But hey, it's easy to do, so why not.
+
+```{r morph-load}
+# Load libraries
+library(magick)
+
+# Load images
+newlogo <- image_scale(image_read("https://www.r-project.org/logo/Rlogo.png"), "x150")
+oldlogo <- image_scale(image_read("https://developer.r-project.org/Logo/Rlogo-3.png"), "x150")
+```
+
+## Morph creation
+
+```{r morph-create}
+morph_frames <- image_morph(c(oldlogo, newlogo), frames = 100)
+```
+
+## Morph animation
+
+```{r morph-anim}
+morph_animate <- image_animate(frames, fps = 20)
+```
+
+## Morph save
+
+```{r}
+image_write(morph_animate, "../BONUS/morph.gif")
+```
+
+# Multivariate stats
+
+> To err is human, but to really foul things up you need a computer.
+>
+> ---*Paul R. Ehrlich*
+
+In this brief tutorial we are going to walk through the steps necessary to perform a most basic ordination. We will be using MDS for this as it produces, in my opinion, the most straight forward results. There is of course an entire school of thought on this and I, a mere climate scientists, am in no way an authoritative voice on the matter.
+
+```{r multi-load}
+# Load libraries
+library(tidyverse)
+library(ggpubr)
+library(vegan)
+
+# Load built-in data
+data("dune")
+data("dune.env")
+```
+
+## MDS
+
+MDS, or multi-dimensional scaling, is high level clustering technique. MDS allows us to determine which of the abiotic variables in our dataset are having the most pronounced effects on the clustering of the dunes. Running an MDS on a data frame in R is simple as the `vegan` package will do all of the heavy lifting for us. First we will jump straight in and run an MDS, then we will take a step back and try changing the standardisation of the values and the distance matrix that we would normally need to first calculate. Please consult the help file (`?metaMDS`) for details on the function.
+
+```{r multi-MDS, results='hide'}
+dune_MDS_1 <- metaMDS(dune)
+```
+
+Or we may be more specific in the way in which we prepare our data for the MDS. Look through the help files to see what other options exist.
+
+```{r multi-more, results='hide'}
+# Standardise data
+dune_stand <- decostand(dune, method = "total")
+
+# Create Bray-Curtis dissimilarity matrix
+dune_dist <- vegdist(dune_stand, method = "bray")
+
+# Create distance matrix
+dune_MDS_2 <- metaMDS(dune_dist)
+```
+
+## Stress
+
+No, not that stress. We are talking about the stress of the MDS model now. This is an important value to check. If the stress is high (\>0.3) the MDS model is doing a poor job of modeling the dissimilarities in the data. If it is low (\<0.1) the model is doing a very good job of displaying the relationships within the data. To check the stress of our results we use the following line of code.
+
+```{r}
+# Default MDS settings
+dune_MDS_1$stress
+
+# Determined settings
+dune_MDS_2$stress
+```
+
+What is the stress of this model? Is that an acceptable level?
+
+## Basic biplot
+
+With the MDS calculated, and the stress tested, it's time to visualise the first round of results.
+
+```{r multi-plot-1, fig.cap="The basic biplot of our dune results."}
+# Convert for ggplot
+dune_MDS_points <- data.frame(site = 1:nrow(dune)) %>%
+  mutate(x = as.numeric(dune_MDS_2$points[ ,1]),
+         y = as.numeric(dune_MDS_2$points[ ,2]))
+
+# Visualise with ggplot
+ggplot(data = dune_MDS_points, aes(x = x, y = y)) +
+  geom_point(size = 8, shape = 21, fill = "black", colour = "red") +
+  geom_text(aes(label = site), colour = "white") +
+  labs(x = "NMDS1", y = "NMDS2")
+```
+
+## Fitting environmental variables
+
+As with all of the other ordination analyses we have performed in R thus far, fitting environmental variables may also be done with one easy step. We do this by providing the `envfit()` function with a formula, the same as we do for linear models. The dependent variable (to the left of the `~`) will be the results of the MDS on the species assemblage data, and the independent variables (to the right of the `~`) are the columns from our environmental variables data frame.
+
+```{r multi-env}
+dune_envfit <- envfit(dune_MDS_2 ~ Moisture + Use, data = dune.env)
+dune_envfit
+```
+
+In the printout above we see the results for the R\^2 (here r2) and *p*-values for the fit of each abiotic variable to the species assemblage data. Which relationships are significant? Which variable(s) appears to best explain the variance in the species assemblages? Which of the axes of the MDS have the strongest relationship with which variable?
+
+To plot the results of our fitted abiotic variables on top of our species MDS we need to quickly prep it to play nice with **`ggplot2`** and then we need only append a couple of lines onto the chunk we wrote to display our MDS results.
+
+```{r multi-plot-2, fig.cap="The basic biplot of our dune results with environmental fits plotted as vectors."}
+# Extract the envfit vector values
+dune_envfit_df <- data.frame(dune_envfit$factors$centroids) %>%
+  mutate(factors = row.names(.)) %>%
+  rename(x = NMDS1, y = NMDS2)
+
+# Visualise environmental fits
+ggplot(data = dune_MDS_points, aes(x = x, y = y)) +
+  geom_point(size = 8, shape = 21, fill = "black", colour = "red") +
+  geom_text(aes(label = site), colour = "white") +
+  geom_segment(data = dune_envfit_df, arrow = arrow(length = unit(0.25, "cm")),
+               aes(x = 0, y = 0, xend = x, yend = y)) +
+  geom_text(data = dune_envfit_df, colour = "red", 
+            aes(x = x, y = y, label = factors)) +
+  labs(x = "NMDS1", y = "NMDS2")
+```
+
+## Adding clusters
+
+In order to add clustering we must first create groupings for our data. In this instance we will be calculating our groups using hierarchical cluster analysis.
+
+```{r}
+# Create dendrogram
+  # Note that this must be run on a distance matrix
+dune_clust <- hclust(dune_dist, "ward.D")
+
+# Extract clusters
+  # In this case we have decided on four clusters
+dune_grp <- cutree(dune_clust, 4)
+
+# Extract groups for plotting
+dune_MDS_points <- dune_MDS_points %>% 
+  mutate(grp_id = as.factor(dune_grp))
+```
+
+With the clusters calculated we may now plot ellipses on our biplot. We will first do this with the built-in functionality of **`ggplot2`**, which unfortunately isn't great.
+
+```{r multi-plot-3, fig.cap="The biplot showing clusters surrounded by ellipses."}
+ggplot(data = dune_MDS_points, aes(x = x, y = y)) +
+  geom_point(size = 8, shape = 21, fill = "black", colour = "red") +
+  geom_text(aes(label = site), colour = "white") +
+  geom_segment(data = dune_envfit_df, arrow = arrow(length = unit(0.25, "cm")),
+               aes(x = 0, y = 0, xend = x, yend = y)) +
+  geom_text(data = dune_envfit_df, colour = "red", 
+            aes(x = x, y = y, label = factors)) +
+  # The ellipses
+  stat_ellipse(aes(colour = grp_id), type = "t") + 
+  #
+  labs(x = "NMDS1", y = "NMDS2", colour = "Cluster")
+```
+
+If we have very large datasets the ellipses will come more in line with what we want. With small datasets not so much. This is because the ellipses are actually calculating the area under which a certain confidence interval is maintained that the points in that group may be found. If we would rather use polygons to fit directly onto the area of our clusters we do so by replacing the ellipses with the following line of code.
+
+```{r multi-plot-4, fig.cap="The biplot with clusters surrounded by custom made polygons."}
+ggplot(data = dune_MDS_points, aes(x = x, y = y)) +
+  geom_point(size = 8, shape = 21, fill = "black", colour = "red") +
+  geom_text(aes(label = site), colour = "white") +
+  geom_segment(data = dune_envfit_df, arrow = arrow(length = unit(0.25, "cm")),
+               aes(x = 0, y = 0, xend = x, yend = y)) +
+  geom_text(data = dune_envfit_df, colour = "red", 
+            aes(x = x, y = y, label = factors)) +
+  # The custom made polygons
+  stat_chull(geom = "polygon", aes(fill = grp_id), alpha = 0.4) +
+  #
+  labs(x = "NMDS1", y = "NMDS2")
+```
+
+I'm not super excited about that result either. A third option is to simply change the colour of the points to reflect their grouping.
+
+```{r multi-plot-5, fig.cap="The biplot with clusters indicated by the colour of the points."}
+ggplot(data = dune_MDS_points, aes(x = x, y = y)) +
+  # Changing point aesthetics
+  geom_point(size = 8, aes(colour = grp_id)) +
+  #
+  geom_text(aes(label = site), colour = "white") +
+  geom_segment(data = dune_envfit_df, 
+               aes(x = 0, y = 0, xend = x, yend = y)) +
+  geom_text(data = dune_envfit_df, colour = "red",
+            aes(label = factors)) +
+  labs(x = "NMDS1", y = "NMDS2", colour = "Cluster")
+```
+
+I think this is actually the cleanest way to visualise the data.
+
+## Diversity
+
+If we are interested in calculating a Shannon-Wiener index on the species diversity found within the dunes we need only one function.
+
+```{r}
+diversity(dune)
+```
+
+## ANOSIM
+
+One final thing. It is also necessary to know if any differences exist between the clusters we have determined for our data. To do this we use the `anosim()` function from the `vegan` package.
+
+```{r}
+anosim(dune_dist, dune_grp)
+```
+
+# R Markdown
+
+The workshop pdf we have been using for the last three days is actually produced from R Markdown and you may view the R Markdown document (the .Rmd file) to see all of the code that created this pdf in its native state. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. R Markdown is based on the language Markdown, which is another computer language, somewhere in between \LaTeX and Microsoft Word. R Markdown differs from Markdown in that it is also able to understand the R code we give it. Furthermore, RStudio has built into it the capabilities necessary to use R Markdown 'out of the box'. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. In order to use this tutorial effectively, please examine the R Markdown file ('Intro_R\_2017.Rmd') in conjunction with the output document ('Intro_R\_2017.pdf'). If you double click on the 'Intro_R\_2017.Rmd' file it will open in the RStudio editor.
+
+## Quick examples
+
+Below is just a quick overview of the many common things one will need to know to put an RMarkdown document together.
+
+### Text
+
+This is text in *italics*.
+
+And this text is in **bold**.
+
+This text is in `code font`.
+
+You can embed an R code chunk like this and show it and the data it produces:
+
+```{r get-the-map, results = TRUE, echo = TRUE, message = FALSE, warning = FALSE}
+library(ggmap)
+# load("../data/cape_point_sites.Rdata")
+# cape_point <- get_map(location = c(lon = 18.36519, lat = -34.2352581),
+#                         zoom = 11, maptype = 'roadmap')
+# load("../data/cape_point.Rdata")
+# str(cape_point)
+
+  # *   site name --- `r cape_point_sites[1,1]`
+  # *   longitude --- `r cape_point_sites[1,2]`
+  # *   latitude --- `r cape_point_sites[1,3]`
+
+```
+
+You can also embed R output directly into sentences as in this example:
+
+Some site details are in this list:
+
+### Tables
+
+There are many ways to produce tables in R Markdown. A short search will provide many alternatives. The **`xtable`** package is another excellent choice as this provides even more options for how your table output will appear. Here we provide one example:
+
+```{r, results = 'asis'}
+knitr::kable(
+  head(mtcars[, 1:8], 10), booktabs = TRUE,
+  caption = 'A table of the first 10 rows of the mtcars data.'
+)
+```
+
+Try looking up the help file for `?kable()` to learn more about what may be done with this function.
+
+### Images
+
+Images stored on your computer, such as \ref{fig:accurate}, can be embedded in your document and even cross referenced.
+
+```{r accurate, echo = FALSE, fig.align = "centre", fig.cap="Only data will tell."}
+knitr::include_graphics("markdown/accurate.jpg")
+```
+
+Notice that in order to display images in this way we need to make sure R knows we are using the **`knitr`** package function `include_graphics()`, which allow one to display images of all sorts of file types without any fuss.
+
+You can also embed any plots produced by R, for example:
+
+```{r the-map, echo = TRUE, message = FALSE, warning = FALSE, fig.height = 3.2, fig.cap = "My first R plot.", echo = FALSE}
+ggmap(cape_point) +
+  geom_point(data = cape_point_sites,
+             aes(x = lon+0.002, y = lat-0.007),
+             colour = "red", size =  1.75) +
+  geom_text(data = cape_point_sites[3,],
+            aes(lon+0.002, lat-0.007, label = site),
+            hjust = -0.1, vjust = 0.5, size = 1.75) +
+  geom_text(data = cape_point_sites[-3,],
+            aes(lon+0.002, lat-0.007, label = site),
+            hjust = 1.1, vjust = 0.5, size = 1.75) +
+  labs(x = "", y = "")
+```
+
+Notice above how the first line specifying the start of the R code includes some specifications with regards to the size of the figure, its caption, etc. Note too that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot. The options `results = TRUE`, `message = TRUE` and `warning = TRUE` have similar functions. Info on the other code chunk options can be found at the [R Markdown website](http://rmarkdown.rstudio.com/authoring_rcodechunks.html) or in the Cheatsheets and other documentation accessible via the RStudio 'Help' in the menu bar.
+
+> HTML hyperlinks\
+> See how the code above also demonstrates how to embed links to external websites.
+
+### References
+
+We can also have some references... This document was made using the R software [@R2017] and various add-on packages [@vegan2017]. The *vegan* package was produced by @vegan2017 some time ago.
+
+## Creating a document
+
+Even though we may immediately begin authoring documents with RStudio, we are limited to .html and .doc file types. If we want to author .pdf files, such as the one we are reading now, we must install 'LaTeX' on our computers. This installation process is beyond the scope of this course but there are many resources available online to aid one in the process and the software is, of course, free.
+
+Whether or not you have 'LaTeX' installed, when you click the **Knit** button (with the option to create multiple document kinds) a document will be generated that includes both content as well as the output of any embedded R code chunks (portions of R code surrounded by code that denotes the R commands) within the document. R code chunks can be used to render R output into documents or to simply display code for illustration, as outlined above.
+
+This is a terribly basic demonstration, but since beautiful documentation already exists I suggest you go and find the necessary examples on the R Markdown website indicated above for a more in-depth account of how to use it.
+
+# References

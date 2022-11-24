@@ -1,0 +1,607 @@
+---
+title: "Workflows in R"
+editor: source
+link-external-newwindow: true
+---
+
+Learning to perform analyses in R and create figures is great, but without a useful workflow we won't get far. The ideal is that we can develop good habits around which we can organise and optimise our workflows. To that end, this page lays out some thoughts on the philosophy of workflows in R. It is broken into three parts that are designed to be consider sequentially, one day at a time. The writing here is much more verbose than the rest of the workshop because this page is also designed to be a reference for any workflow questions that attendees may have after the workshop concludes.
+
+```{r workflow-opts, echo=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE, 
+  message = FALSE,
+  echo = TRUE,
+  eval = FALSE
+)
+```
+
+## R Workflow - I
+
+### Style and code conventions
+
+Early on, develop the habit of unambiguous and consistent style and formatting when writing your code, or anything else for that matter. Pay attention to detail and be pedantic, as with scientific writing in general. Although many R commands rely on precisely formatted statements (code blocks), style can nevertheless to *some extent* have a personal flavour to it. The key is *consistency*. One may notice that the content for this workshop follows a certain convention to improve readability.
+
+-   Package names are shown in a bold font over a grey box, *e.g.* **`tidyr`**.
+-   Functions are shown in normal font followed by parentheses and also over a grey box , *e.g.* `plot()`, or `summary()`.
+-   Other R objects, such as data, function arguments or variable names are again in normal font over a grey box, but without parentheses, *e.g.* `x` and `apples`.
+-   Sometimes a package that contains a specific function is referenced using two colons, *e.g.* `dplyr::filter()`.
+-   Commands entered into the R command line (console) and the output that it returns will be shown in a code block, which is a light grey background with coloured code font.
+
+Consult these resources for more about R code style :
+
+-   [Google's R style guide](https://google.github.io/styleguide/Rguide.xml)
+-   [The tidyverse style guide](http://style.tidyverse.org)
+-   [Hadley Wickham's advanced R style guide](http://adv-r.had.co.nz/Style.html)
+
+### Help
+
+The help files in R are not always clear. It requires a bit of work to understand them well. There is method however to what appears to be madness. Please type `?read.table()` in your console now to bring up this help file in your RStudio GUI.
+
+The first thing we see at the top of the help file in small font is the name of the function, and the package it comes from in curly braces. After this, in very large text, is a very short description of what the function is used for. After this is the 'Description' section, which gives a sentence or two more fully explaining the use(s) of the function. The 'Usage' then shows all of the arguments that may be given to the function, and what their default settings are. When we write a function in our script we do *not* need to include all of the possible arguments. The help file shows us all of them so that we know what our options are. In some cases a help file will show the usage of several different functions together. This is done, as is the case here, if these functions form a sort of 'family' and share many common purposes. The 'Arguments' section gives a long explanation for what each individual argument may do. The Arguments section here is particularly verbose. Up next is the 'Details' section that gives a more in depth description of what the function does. The 'Value' section tells us what sort of output we may expect from the function. Some of the more well documented functions, such as this one, will have additional sections that are not a requirement for function documentation. In this case the 'Memory usage' and 'Note' sections are not things one should always expect to see in help files. Also not always present is a 'References' section. Should there be actual published documentation for the function, or the function has been used in a publication for some other purpose, these references tend to be listed here. There are many functions in the **`vegan`** package that have been used in dozens of publications. If there is additional reading relevant to the function in question, the authors may also have included a 'See also' section, but this is not standard. Lastly, any well documented function should end with an 'Examples' section. The code in this section is designed to be able to be copy-pasted directly from the help file into the users R script or console and run *as is*. It is perhaps a bad habit, but when I am looking up a help file for a function, I tend to look first at the Examples section. And only if I can't solve my problem with the examples do I actually read the documentation.
+
+### R Scripts
+
+The first step for any project in R is to create a new script. We do this by clicking on the 'New Document' button (in the top left and selecting 'R Script'). This creates an unnamed file in the **Source Editor** pane. Best to save it first of all so we do not lose what we do. 'File'/'Save As'/ and the Working Directory should come up. Type in `workflow` as the file name and click 'save.' R will automatically add a `.R` extension.
+
+It is recommended to start a script with some basic information for you to refer back to later. Start with a comment line (the line begins with a `#`) that tells you the name of the script, what its purpose is, what it does, who created it, and the date it was created. In the source editor enter to following lines and save the file again:
+
+```{r workflow-header, eval=FALSE}
+# workflow.R
+# <purpose of script>
+# <what it does>
+# <your name>
+# <current date>
+```
+
+Remember that anything appearing after the `#` is not executed by R as script and is a comment.
+
+It is recommended that for the DIY sessions at the end of each day you start a new script (in the **Source Editor**). That way you will have a record of what you have done.
+
+Below we will see how to import the file `sst_NOAA.csv` into R, assign it to a dataframe named `sst_NOAA`, and spend a while looking it over. These data contain the daily sea surface temperature (SST) values from 1982-2021 at three locations that experienced, at some point over that period, a well studied marine heatwave (MHW). The name of the location is given in the `site` column, the daily dates in `t`, and the SST values in `temp`.
+
+> **Comments**\
+> The hash (`#`) tells R not to run any of the text on that line to the right of the symbol. This is the standard way of commenting R code; it is VERY good practice to comment in detail so that you can understand later what you have done.
+
+### Reading data into R
+
+R will read in many types of data, including spreadsheets, text files, binary files and files from other statistical packages and software.
+
+> **Full stops**\
+> In most of the world we are taught from a young age to use commas (`,`) instead of full stops (`.`) for decimal places. This simply will not do when we are working with a computer. You must always use a full stop for a decimal place and never insert commas anywhere into any numbers.
+
+> **Commas**\
+> R generally thinks that commas mean the user is telling the computer to separate values. So if you think you are typing a big number like 2,300 you may actually end up with two numbers. Never use commas with numbers.
+
+#### Preparing data for R
+
+Importing data can sometimes take longer than the statistical analysis itself! In order to avoid as much frustration as possible it is important to remember that for R to be able to comprehend your data they need to be in a consistent format, with each variable in a column and each sample in a row. The format within each variable (column) needs to be consistent and is commonly one of the following types: a continuous numeric variable (*e.g.*, fish length (m): `0.133`, `0.145`); a factor or categorical variable (*e.g.*, Month: `Jan`, `Feb` or `1`, `2`, `…`, `12`); a nominal variable (*e.g.*, algal colour: `red`, `green`, `brown`); or a logical variable (*i.e.*, `TRUE` or `FALSE`). You can also use other more specific formats such as dates and times, and more general text formats.
+
+We learn more about working with data in R in the **Tidy  Data** (Day 5) slides and exercises. Including the distinction between *long* and *wide* format data. For most of our work in R we require our data to be in the long format, but Excel users tend to be more familiar with data stored in the wide format. For now let's bring some data into R and not worry too much about the data being tidy.
+
+#### Converting data
+
+Before we can read in the *sst_NOAA* dataset provided for the following exercises, we need to convert the Excel file (i.e. `.xlsx`) supplied into a `.csv` file. Open `sst_NOAA.xlsx` in Excel, then select 'Save As' from the File menu. In the 'Format' drop-down menu, select the option called 'Comma Separated Values', then hit 'Save'. You'll get a warning that formatting will be removed and that only one sheet will be exported; simply 'Continue'. Your working directory should now contain a file called `sst_NOAA.csv`.
+
+#### Importing data
+
+The easiest way to import data into R is by changing your working directory to be the same as the file path where the file(s) are you want to load. A file path is effectively an address. In most operating systems, if you open the folder where your files are you may click on the navigation bar and it will show you the complete file path. Many people develop the nasty habit of squirling away their files within folders within folders within folders within folders... within folders within folders. Please don't do that.
+
+The concept of file paths is either one that you are familiar with, or you've never heard of before. There tends to be little middle ground. Happily, RStudio allows us to circumvent this issue. We do this by using the `R_workshop.Rproj` that you may find in the files downloaded for this workshop. If you have not already switched to the `R_Workshop.Rproj` as outlined in the [RStudio primer](https://face-it-project.github.io/R_workshop/R_RStudio.html), click on the project button in the top right corner your RStudio window. Then navigate to where you saved `R_Workshop.Rproj` and select it. Notice that your RStudio has changed a bit and all of the objects you may have previously created in your environment have been removed and any tabs in the source editor pane have been closed. That is fine for now, but it may mean you need to re-open the `workflow.R` script you just created.
+
+Once we have the working directory set, either by doing it manually with `setwd()` or by loading a project, R will now know where to look for the files we want to read. The function `read_csv()` is the most convenient way to read in raw data. There are several other ways to read in data, but for the purposes of this workshop we'll stick to this one, for now. To find out what it does, we will go to its help entry in the usual way (*i.e.* `?read_csv`).
+
+> **Data formats**\
+> R has pedantic requirements for naming variables. It is safest to not use spaces, special characters (*e.g.*, commas, semicolons, any of the shift characters above the numbers), or function names (*e.g.*, mean). One can use 'camelCase', such as `myFirstVariable`, or snake case, such as `my_first_variable`. Always make sure to use meaningful names; eventually you will learn to find a balance between meaningfulness and something short that's easy enough to retype repeatedly (although R's ability to use tab completion helps with not having to type long names to often).
+
+> **Import**\
+> `read_csv()` is simply a 'wrapper' (*i.e.*, a command that modifies) a more basic command called `read_delim()`, which itself allows you to read in many types of files besides `.csv`. To find out more, type `?read_delim()`.
+
+#### Loading a file
+
+To load the `sst_NOAA.csv` file we created, and assign it to an object name in R, we will use the `read_csv()` function from the **`tidyverse`** package, so let's make sure it is activated.
+
+```{r workflow-library}
+library(tidyverse)
+```
+
+Depending on the version of Excel you are using, or perhaps the settings within it, the `sst_NOAA.csv` file you created may be changed in different ways without being notified. Generally Excel likes to replace the `,` between columns in our `.csv` files with `;`. This may seem like a triviality but sadly it is not. Lucky for use, the **`tidyverse`** knows about this problem and they have made a plan. Please open your `sst_NOAA.csv` file in a text editor (e.g. notepad) and look at which character is being used to separate columns. `read_csv()` has become clever enough over the years that it now understands what the delimiter should be. But do be careful here.
+
+```{r, message=TRUE}
+# Note what the 'Delimiter' is 
+sst_NOAA <- read_csv("course_material/data/sst_NOAA.csv")
+```
+
+If one clicks on the newly created `sst_NOAA` object in the **Environment** pane it will open a new panel that shows the information as a spreadsheet. To go back to your script click the appropriate tab in the **Source Editor** pane. With these data loaded we may now perform analyses on them.
+
+At any point when working in R, you can see exactly what objects are in memory in several ways. First, you can look at the **Environment** tab in RStudio, then **Workspace Browser**. Alternatively you can type either of the following:
+
+```{r, eval=FALSE}
+ls()
+# or
+objects()
+```
+
+You can delete an object from memory by specifying the `rm()` function with the name of the object:
+
+```{r, eval=FALSE}
+rm(sst_NOAA)
+```
+
+This will of course delete our dataset, so we may import it again with the same line of code as necessary.
+
+```{r, eval=FALSE}
+sst_NOAA <- read_csv("course_material/data/sst_NOAA.csv")
+```
+
+> **Managing variables**\
+> It is good practice to remove variables from memory that you are not using, especially if they are large.
+
+### Examine your data
+
+Once the data are in R, you need to check there are no glaring errors. It is useful to call up the first few lines of the dataframe using the function `head()`. Try it yourself by typing:
+
+```{r}
+head(sst_NOAA)
+```
+
+This lists the first six lines of each of the variables in the dataframe as a table. You can similarly retrieve the last six lines of a dataframe by an identical call to the function `tail()`. Of course, this works better when you have fewer than 10 or so variables (columns); for larger data sets, things can get a little messy. If you want more or fewer rows in your head or tail, tell R how many rows it is you want by adding this information to your function call. Try typing:
+
+```{r}
+head(sst_NOAA, n = 3)
+tail(sst_NOAA, n = 2)
+```
+
+You can also check the structure of your data by using the `glimpse()` function:
+
+```{r}
+glimpse(sst_NOAA)
+```
+
+This very handy function lists the variables in your dataframe by name, tells you what sorts of data are contained in each variable (*e.g.*, continuous number, discrete factor) and provides an indication of the actual contents of each.
+
+If we wanted only the names of the variables (columns) in the dataframe, we could use:
+
+```{r, eval=FALSE}
+names(sst_NOAA)
+```
+
+## R Workflow - II
+
+If you are starting at this point, rather than continuing directly from above, please load the `workflow.R` script we created during 'R Workflow - I'.
+
+### Tidyverse sneak peek
+
+Before we begin to manipulate our data further we need to briefly introduce ourselves to the **`tidyverse`**. And no introduction can be complete within learning about the *pipe* command, `%>%`. We may type this by pushing the following keys together: **ctrl+shift+m**. The pipe (`%>%`) allows us to perform calculations sequentially, which helps us to avoid making errors.
+
+The pipe works best in tandem with the following five common functions:
+
+-   Arrange observations (rows) with `arrange()`\
+-   Select variables (columns) with`select()`\
+-   Filter observations (rows) with `filter()`\
+-   Create new variables (columns) with `mutate()`\
+-   Summarise variables (columns) with `summarise()`
+
+We will cover these functions in more detail on Day 5. For now we will ease ourselves into the code with some simple examples.
+
+### Subsetting
+
+Now let's have a look at specific parts of the data. You will likely need to do this in almost every script you write. If we want to refer to a variable, we specify the dataframe then the column name within the `select()` function. In your script type:
+
+```{r, eval=FALSE}
+sst_NOAA %>% # Tell R which dataframe we are using
+  select(site, temp) %>% # Select only specific columns
+  head(3) # Just here to limit the printout on this page...
+```
+
+If we want to only select values from specific columns and rows we insert one more line of code.
+
+```{r, eval=FALSE}
+sst_NOAA %>% 
+  select(site, temp) %>% # Select specific columns first
+  slice(56:58)
+# what does the '56:58' do? Change some numbers and run the code again. What happens?
+```
+
+If we wanted to select only the rows of data belonging to the Mediterranean site, we could type:
+
+```{r, eval=FALSE}
+sst_NOAA %>%
+  filter(site == "Med") %>% 
+  head(3)
+```
+
+The function `filter()` has two arguments: the first is a dataframe (we specify `sst_NOAA` in the previous line and the pipe supplies this for us) and the second is an expression that relates to which rows of a particular variable we want to include. Here we include all rows for `Med` and we find that in the variable `site`. It returns a subset that is itself a dataframe in the same form as the original dataframe. We could assign that subset of the full dataframe to a new dataframe if we wanted to.
+
+```{r, eval=FALSE}
+sst_NOAA_med <- sst_NOAA %>% 
+  filter(site == "Med")
+```
+
+> **DIY: Subsetting**\
+> In the script you have started, create a new named dataframe containing only SST from two of the sites. Check that the new dataframe has the correct values in it. What purpose can the naming of a newly-created dataframe serve?
+
+### Basic stats
+
+Straight out of the box it is possible in R to perform a broad range of statistical calculations on a dataframe. If we wanted to know how many daily samples we have in the `Med`, we simply type the following:
+
+```{r, eval=FALSE}
+sst_NOAA %>% # Tell R which dataset to use
+  filter(site == "Med") %>% # Filter out only records from the Med
+  nrow() # Count the number of remaining rows
+```
+
+Or, if we want to select only the row with the highest temperature:
+
+```{r, eval=FALSE}
+sst_NOAA %>% # Tell R which dataset to use
+  filter(temp == max(temp)) # Select row with max total length
+```
+
+Now exit RStudio. Pretend it is three days later and revisit your analysis. Calculate the number of entries at `Med` and find the row with the highest temperature.
+
+Imagine doing this daily as our analysis grows in complexity. It will very soon become quite repetitive if each day you had to retype all these lines of code. And now, six weeks into the research and attendant statistical analysis, you discover that there were some mistakes and some of the raw data were incorrect. Now everything would have to be repeated by retyping it at the command prompt. Or worse still (and bad for repetitive strain injury) doing all of it in SPSS and remembering which buttons to click and then re-clicking them. A pain. Let's avoid that altogether and do it the right way by writing an R script to automate and annotate all of this.
+
+> **Dealing with missing data**\
+> The `.csv` file format is usually the most robust for reading data into R. Where you have missing data (blanks), the `.csv` format separates these by commas. However, there can be problems with blanks if you read in a space-delimited format file. If you are having trouble reading in missing data as blanks, try replacing them in your spreadsheet with `NA`, which is the code for missing data in R. In Excel, highlight the area of the spreadsheet that includes all the cells you need to fill with `NA`. Do an Edit/Replace... and leave the 'Find what:' textbox blank and in the 'Replace with:' textbox enter `NA`, the missing value code. Once imported into R, the `NA` values will be recognised as missing data.
+
+Remember that in an R script, you can run individual lines of code by highlighting them and pressing **ctrl-Enter** (**cmd-Enter** on a Mac). Your R script should now look similar to this one, but of course you will have added your own notes and comments as you went along:
+
+```{r, eval=FALSE}
+# workflow.R
+# <What is the purpose>
+# <What it does>
+# <name>
+# <date>
+
+# Find the current working directory (it will be correct if a project was
+# created as instructed earlier)
+getwd()
+
+# If the directory is wrong because you chose not to use an Rworkspace (project),
+# set your directory manually to where the script will be saved and where the data
+# are located
+# setwd("<insert_path_here>")
+
+# Load libraries
+library(tidyverse)
+
+# Load the data
+sst_NOAA <- read_csv("course_material/data/sst_NOAA.csv")
+
+# Examine the data
+head(sst_NOAA, 5) # First five lines
+tail(sst_NOAA, 2) # Last two lines
+glimpse(sst_NOAA) # A more thorough summary
+names(sst_NOAA) # The names of the columns
+
+# Subsetting data
+sst_NOAA %>% # Tell R which dataframe to use
+  select(site, temp) %>% # Select specific columns
+  slice(56:78) # Select specific rows
+
+# How many data points do we have in the Med?
+sst_NOAA %>%
+  filter(site == "Med") %>%
+  nrow()
+
+# The row with the highest temperature
+sst_NOAA %>% # Tell R which dataset to use
+  filter(temp == max(temp)) # Select row with max total length
+```
+
+Making sure all the latest edits in your R script have been saved, close your R session. Pretend this is now two years in the future and you need to revisit the analysis. Open the file you created in 2022 in RStudio. All you need to do now is highlight the file's entire contents and hit **ctrl-Enter**.
+
+> **Stick with `.csv` files**\
+> There are packages in R to read Excel spreadsheets (*e.g.*, .xlsx), but remember there are likely to be problems reading in formulae, graphs, macros and multiple worksheets. We recommend exporting data deliberately to `.csv` files (which are also commonly used in other programs). This not only avoids complications, but also allows you to unambiguously identify the data you based your analysis on. This last statement should give you the hint that it is good practice to name your `.csv` slightly differently each time you export it from Excel, perhaps by appending a reference to the date it was exported.
+
+> **Remember...**\
+> Friends don't let friends use Excel.
+
+### Summary of all variables in a dataframe
+
+Once we're happy that we know what the variables are called and what sorts of data they contain, we can dig a little deeper. Try typing:
+
+```{r}
+summary(sst_NOAA)
+```
+
+The output is quite informative. It tabulates variables by name, and for each provides summary statistics. For continuous variables, the name, minimum, maximum, first, second (median) and third quartiles, and the mean are provided. For factors (categorical variables), a list of the levels of the factor and the count of each level are given. In either case, the last line of the table indicates how many NAs are contained in the variable. The function `summary()` is useful to remember as it can be applied to many different R objects (*e.g.*, variables, dataframes, models, arrays, *etc.*) and will give you a summary of that object. We will use it liberally throughout the workshop.
+
+### Summary statistics by variable
+
+This is all very convenient, but we may want to ask R specifically for just the mean of a particular variable. In this case, we simply need to tell R which summary statistic we are interested in, and to specify the variable to apply it to using `summarise()`. Try typing:
+
+```{r}
+sst_NOAA %>% # Chose the dataframe
+  summarise(mean_temp = mean(temp)) # Calculate mean temperature
+```
+
+Or, if we wanted to know the mean and standard deviation for the temperature across all sites, do:
+
+```{r, eval=FALSE}
+sst_NOAA %>% # Tell R that we want to use the 'sst_NOAA' dataframe
+  group_by(site) %>%  # Tell R to perform the following calculations on groups
+  summarise(mean_temp = mean(temp), # Create a summary of the mean of temperature
+            sd_temp = sd(temp)) # Create a summary of the SD of the temperature
+```
+
+Of course, the mean and standard deviation are not the only summary statistic that R can calculate. Try `max()`, `min()`, `median()`, `range()`, `sd()` and `var()`. Do they return the values you expected? 
+
+### More complex calculations
+
+Let's say you want to calculate something that is not standard in R (e.g. the standard error of the mean for a variable). How can this be done?
+
+The trick is to remember that R is a calculator, so we can use it to do maths, even complex maths (which we won't do). We know that the variance is given by `var()`, so all we need to do is figure out how to get `n` and calculate a square root. The simplest way to determine the number of elements in a variable is a call to the function `n()`. We may therefore calculate standard error with one chunk of code, step by step, using the pipe. Furthermore, by using `group_by()` we may calculate the standard error for all sites in one go.
+
+```{r}
+sst_NOAA %>% # Select 'laminaria'
+  group_by(site) %>% # Group the dataframe by site
+  summarise(var_temp = var(temp), # Calculate variance
+            n_temp = n()) %>%  # Count number of values
+  mutate(se_temp = sqrt(var_temp / n_temp)) # Calculate se
+```
+
+### Code chunks
+
+Not only does keeping our code grouped in 'chunks' keep our workflow tidier, it also makes it easier to read for ourselves, our colleagues, and most importantly, our future selves. When we look at the previous code chunk we can think of it as a paragraph in a research report, with each line a sentence. If I were to interpret this chunk of code in plain English it would sound something like this: 
+  
+> I start by taking the original sst_NOAA data.
+I then grouped the data into different sites.
+After this I calculated the mean temperature for each site, as well as counting the number of observations within each site.
+FInally, I caluclate the standard error by finding the square root of the variance over the number of samples.
+
+Just like paragraphs in a human language may vary in length, so too may code chunks. There really is no limit. This is not to say that it is encouraged to attempt to reproduce a code chunk of comparable length to anything Marcel Proust would have written. It is helpful to break things up into pieces of a certain size. The best size is up to the discretion of the person writing the code. It is up to you to find out for yourself what works best for you.
+
+### Missing values (`NA`)
+
+Sometimes, you need to tell R how you want it to deal with missing data. In the case that you have `NA` in the named variable, R takes the cautious approach of giving you the answer of `NA`, meaning that there are missing values here. This may not seem useful, but as the programmer, you can tell R to respond differently, and it will. Simply append an argument to your function call, and you will get a different response. For example:
+
+```{r, eval=FALSE}
+sst_NOAA %>% 
+  summarise(mean_temp = mean(temp, na.rm = T))
+```
+
+The `na.rm` argument tells R to remove (or more correctly 'strip') `NA` values from the data string before calculating the mean.  Although needing to deal explicitly with missing values in this way can be a bit painful, it does make you more aware of missing data, what the analyses in R are doing, and makes you decide explicitly how you will treat missing data.
+
+When calculating the mean, we specified that R should strip the `NA` values, using the argument `na.rm = TRUE`. In the example above, we didn't have `NA` values in the variable of interest. What happens if we *do*?
+
+Unfortunately, the call to the function `n()` has no arguments telling R how to treat `NA` values; instead, they are simply treated as elements of the variable and are therefore counted. The easiest way to resolve this problem is to strip out `NA` values in advance of any calculations.
+
+```{r, eval=FALSE}
+sst_NOAA %>% 
+  select(temp) %>% 
+  na.omit() %>% 
+  summarise(n = n())
+```
+
+Were there missing values in this dataset, the function `na.omit()` would remove them from the variable that is specified as its argument.
+
+### Saving data
+
+A major advantage of R over many other statistics packages is that you can generate exactly the same answers time and time again by simply re-running saved code. However, there are times when you will want to output data to a file that can be read by a spreadsheet program such as Excel (but try not to... please). The simplest general format is .csv (comma-separated values). This format is easily read by Excel, and also by many other software programs. To output a .csv type:
+
+```{r, eval=FALSE}
+write_csv(sst_NOAA_med, path = "course_material/data/sst_NOAA_med.csv")
+```
+
+The first argument is simply the name of an object in R, in this case our table (a data object of class *table*) of SST for the Mediterranean (other sorts of data are available, so play around to see what can be done). The second argument is the name of the file you want to write to. This file will always be written to your working directory, unless otherwise specified by including a different path in the file name. Remember that file names need to be within quotation marks.
+
+At this point, it might be worth thinking a bit about what the program is doing. R requires one to think about what you are doing, not simply clicking buttons like in some other software systems. Scripts execute sequentially from top to bottom. Try and work out what each line of the program is doing and discuss it with your neighbour. Note, if you get stuck, try using R's help system; accessing the help system is especially easy within RStudio.
+
+### Clearing the memory
+
+You will be left with many objects after working through these examples. Note that in RStudio when you quit it can save the Environment if you choose, and so it can retain the objects in memory when you start RStudio again. The choice to save the objects resulting from an R Session until next time can be selected in the Global Options menu ('Tools' \> 'Global Options' \> 'General' \> 'Save workspace to .RData on exit'). Personally, we never save objects as it is preferable to start on a clean slate when one opens RStudio. Either way, to avoid long load times and clogged memory, it is good practice to clear the objects in memory every now and then unless you can think of a compelling reason not to. This may be done by clicking on the broom icon at the top of the **Environment** pane.
+
+Of course, you could remove an individual object by placing only its name within the brackets of `rm()`. Do not use this line of code carelessly in the middle of your script; doing so will mean that you have to go back and regenerate the objects you accidentally removed -- this is more of a nuisance than a train smash, especially for long, complicated scripts, as you will have (I hope!) saved the R script from which the objects in memory can be regenerated at any time.
+
+Now let us save the program in the **Source Editor** by clicking on the file symbol (note that the file symbol is greyed out when the file has not been changed since it was last saved).
+
+## R Workflow - III
+
+If you are starting at this point, rather than continuing directly from above, please load the `workflow.R` script we created during 'R Workflow - I' and 'R Workflow - II'.
+
+### Additional useful functions
+
+There is an avalanche of useful functions to be found within the **`tidyverse`**. In truth, we have only looked at functions from three packages: **`ggplot2`**, **`dplyr`**, and **`tidyr`**. There are far, far too many functions even within these three packages to cover within a week. But that does not mean that the functions in other packages, such as **`purrr`** are not also massively useful for our work. More on that tomorrow (Day 6). For now we will see how the inclusion of a handful of choice extra functions may help to make our workflow even tidier.
+
+#### Rename variables (columns) with `rename()`
+
+We have seen that we select columns in a dataframe with `select()`, but if we want to rename columns we have to use, you guessed it, `rename()`. This functions works by first telling R the new name you would like, and then the existing name of the column to be changed. This is perhaps a bit back to front, but such is life on occasion.
+
+```{r}
+sst_NOAA %>% 
+  rename(source = site) %>% 
+  head(3)
+```
+
+#### Create a new dataframe for a newly created variable (column) with `transmute()`
+
+If for whatever reason one wanted to create a new variable (column), as one would do with `mutate()`, but one does not want to keep the dataframe from which the new column was created, the function to use is `transmute()`.
+
+```{r}
+sst_NOAA %>% 
+  transmute(kelvin = temp + 273.15) %>% 
+  head(3)
+```
+
+This makes a bit more sense when paired with `group_by()` as it will pull over the grouping variables into the new dataframe. Note that when it does this for us automatically it will provide a message in the console.
+
+```{r}
+sst_NOAA %>% 
+  group_by(site, t) %>% 
+  transmute(kelvin = temp + 273.15) %>% 
+  head(3)
+```
+
+#### Count observations (rows) with `n()`
+
+We have already seen this function sneak it's way into a few of the code chunks in the previous session. We use `n()` to count any grouped variable automatically. It is not able to be given any arguments, so we must organise our dataframe in order to satisfy it's needs. It is the diva function of the **`tidyverse`**; however, it is terribly useful as we usually want to know how many observations our summary stats are based on. First we will run some stats and create a figure without `n`. Then we will include `n` and see how that changes our conclusions.
+
+```{r n-for-the-win-1, fig.cap="Dot plot showing range of mean temperatures for the time series in the NOAA dataset."}
+ sst_NOAA_n <- sst_NOAA %>%
+  mutate(month = lubridate::month(t)) %>%
+  group_by(site, month) %>%
+  summarise(mean_temp = round(mean(temp, na.rm = T)),
+            .groups = "drop") %>%
+  arrange(mean_temp) %>%
+  select(mean_temp) %>%
+  distinct()
+
+ggplot(data = sst_NOAA_n, aes(x = 1:nrow(sst_NOAA_n), y = mean_temp)) +
+  geom_point() +
+  labs(x = "", y = "Temperature (°C)") +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+That looks vaguely linear... To make things more interesting, now let's change the size of the dots to show how frequently each of these mean temperatures is occurring.
+
+```{r n-for-the-win-2, fig.cap="Dot plot showing range of mean temperatures for the time series in the SACTN dataset with the size of each dote showing the number of occurences of each mean."}
+ sst_NOAA_n <- sst_NOAA %>%
+  mutate(month = lubridate::month(t)) %>%
+  group_by(site, month) %>%
+  summarise(mean_temp = round(mean(temp, na.rm = T)),
+            .groups = "drop") %>%
+  arrange(mean_temp) %>%
+  select(mean_temp) %>%
+  group_by(mean_temp) %>% 
+  summarise(count = n(), 
+            .groups = "drop")
+
+ggplot(data = sst_NOAA_n, aes(x = 1:nrow(sst_NOAA_n), y = mean_temp)) +
+  geom_point(aes(size = count)) +
+  labs(x = "", y = "Temperature (°C)") +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+```
+
+We see now when we include the count (`n`) of the different mean temperatures that this distribution is not so even. There appears to be a hump around 20°C to 23°C. Of course, we've created dot plots here just to illustrate this point. In reality if one were interested in a distribution like this one would use a histogram, or better yet, a density polygon.
+
+```{r  n-for-the-win--3, fig.cap="Frequency distribution of mean temperature for each time series in the sst_NOAA dataset."}
+sst_NOAA %>% 
+  mutate(month = lubridate::month(t)) %>%
+  group_by(site, month) %>%
+  summarise(mean_temp = round(mean(temp, na.rm = T)), 
+            .groups = "drop") %>% 
+  ggplot(aes(x = mean_temp)) +
+  geom_density(aes(fill = site), alpha = 0.6) +
+  labs(x = "Temperature (°C)")
+```
+
+#### Select observations (rows) by number with `slice()`
+
+If one wants to select only specific rows of a dataframe, rather than using some variable like we do for `filter()`, we use `slice()`. The function expects us to provide it with a series of integers as seen in the following code chunk. Try playing around with these values and see what happens
+
+```{r, eval=FALSE}
+# Slice a sequence of rows
+sst_NOAA %>% 
+  slice(10010:10020)
+
+# Slice specific rows
+sst_NOAA %>%
+  slice(c(1,8,19,24,3,400))
+
+# Slice all rows except these
+sst_NOAA %>% 
+  slice(-(c(1,8,4)))
+
+# Slice all rows except a sequence
+sst_NOAA %>% 
+  slice(-(1:1000))
+```
+
+It is discouraged to use slice to remove or select specific rows of data as this does not discriminate against any possible future changes in ones data. Meaning that if at some point in the future new data are added to a dataset, re-running this code will likely no longer be selecting the correct rows. This is why `filter()` is a main function, and `slice()` is not. This auxiliary function can however still be quite useful when combined with arrange.
+
+```{r tidiest-slice-2}
+# The top 5 variable sites as measured by SD
+sst_NOAA %>% 
+  mutate(month = lubridate::month(t)) %>% 
+  group_by(site, month) %>% 
+  summarise(sd_temp = sd(temp, na.rm = T), 
+            .groups = "drop") %>% 
+  arrange(desc(sd_temp)) %>% 
+  slice(1:5)
+```
+
+### Working directories
+
+At the beginning of this page we glossed over this topic by setting the working directory via RStudio's project functionality. This concept is however critically important to understand so we must now cover it in more detail. The current working directory, where R will read and write files, is displayed by RStudio within the title region of the Console. There are a number of ways to change the current working directory:
+
+1.  Select 'Session'/'Set Working Directory' and then choose from the four options for how to set your working directory depending on your preference
+
+2.  From within the **Files** pane, navigate to the directory you want to set as the working directory and then select 'More'/'Set As Working Directory' menu item (navigation within the Files pane alone will not change the working directory)
+
+3.  Use `setwd()`, providing the name of your desired working directory as a character string - this is the reccomended option of the three
+
+In the **Files** tab, use the directory structure to navigate to the R Workshop directory (this will differ from person to person). Then under 'More', select the small upside down (drill-down) triangle and select 'Set As Working Directory'. This means that whenever you read or write a file it will always be working in that directory. This gives us the code for setting the directory (below is the code that I would enter in the **Console** on my computer):
+
+```{r, eval=FALSE}
+setwd("~/R_Workshop")
+```
+
+It will be different for you, but copy it into your script and make a note for future reference.
+
+> **Working directories**\
+> For Windows users, if you copy from a file path the slashes will be the wrong way around and must be changed!
+
+You can check that R got this right by typing into the **Console**:
+
+```{r, eval=FALSE}
+getwd()
+```
+
+> **Organising R projects**\
+> For every R project, set up a separate directory that includes the scripts, data files and outputs.
+
+Before moving on it is important that everyone is comfortable with this concept because tomorrow (Day 6) we will be learning how to source, download, and process data from the wild. If we don't have a clear understanding of working directories, this process is going to be difficult. Please let the instructor know now if you would like to spend more time on this concept instead of moving on to the DIY data assignment. It is perfectly fine if you do.
+
+### Data in R
+
+The base R program that we all have loaded on our computers already comes with heaps of example dataframes that we may use for practice. We don't need to load our own data. Additionally, whenever we install a new package (and by now we've already installed dozens) it usually comes with several new dataframes. There are many ways to look at the data that we have available from our packages. Below we show two of the many options.
+
+```{r, eval=FALSE}
+# To create a list of ALL available data
+  # Not really recommended as the output is overwhelming
+data(package = .packages(all.available = TRUE))
+
+# To look for datasets within a single known package
+  # type the name of the package followed by '::'
+  # This tells R you want to look in the specified package
+  # When the autocomplete bubble comes up you may scroll
+  # through it with the up and down arrows
+  # Look for objects that have a mini spreadsheet icon
+  # These are the datasets
+
+# Try typing the following code and see what happens...
+datasets::
+```
+
+We have an amazing amount of data available to us. So the challenge is not to find a dataframe that works for us, but to just decide on one. My preferred method is to read the short descriptions of the dataframes and pick the one that sounds the funniest. But please use whatever method makes the most sense to you. Remember that in R there are generally two different forms of data: **wide** *OR* **long**, and **`ggplot2`** works much better with long data. To look at a dataframe of interest we use the same method we would use to look up a help file for a function.
+
+Over the years I've installed so many packages on my computer that it is difficult to chose a dataframe. The package **`boot`** has some particularly interesting dataframes with a biological focus. Please install this now to access to these data. I have decided to load the `urine` dataframe here. Note that `library(boot)` will not work on your computer if you have not installed the package yet. With these data we will now make a scatterplot with two of the variables, while changing the colour of the dots with a third variable.
+
+```{r brew-1}
+# Load libraries
+library(tidyverse)
+library(boot)
+
+# Load data
+urine <- boot::urine
+
+# Look at help file for more info
+# ?urine
+
+# Create a quick scatterplot
+ggplot(data = urine, aes(x = osmo, y = ph)) +
+  geom_point(aes(colour = cond))
+```
+
+And now we have a scatterplot that is showing the relationship between the osmolarity and pH of urine, with the conductivity of those urine samples shown in shades of blue. What is important to note here is that the colour scale is continuous. How can we know this by looking at the figure? Let's look at the same figure but use a discrete variable for colouring.
+
+```{r brew-2}
+ggplot(data = urine, aes(x = osmo, y = ph)) +
+  geom_point(aes(colour = as.factor(r)))
+```
+
+What is the first thing you notice about the difference in the colours? Why did we use `as.factor()` for the colour aesthetic for our points? What happens if we don't use this? Try it now. This is a brief recap of what we learned on Day 3.
+

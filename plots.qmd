@@ -1,0 +1,74 @@
+---
+title: "Plotting in R"
+editor: source
+link-external-newwindow: true
+---
+
+Though it may have started as statistical software, R has moved far beyond it's mundane origins. The language is now capable of a wide range of applications, some of which you have already seen, and some others you will see over the rest of this workshop. For Day 3 we are going to go more in-depth on the concept of data visualisation via **`ggplot2`**. One should also note that there is a staggering amount of support for this package in the form of extension packages covering a range of visualisations and applications. A full [gallery](https://r-graph-gallery.com/) of the possible visualisations has been assembled and is worth a look.
+
+## Slides and application exercises
+
+::: slide-deck
+**Plotting 1: Basics**
+
+::: slides
+[Slides](https://face-it-project.github.io/R_workshop/course_material/_slides/plots_1_basics.html)
+:::
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/_slides/plots_1_basics.qmd)
+:::
+:::
+
+::: application-exercise
+**To `aes()` or not to `aes()`...**
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/exercises/plots_1_basics.R)
+:::
+:::
+
+::: slide-deck
+**Plotting 2: Facets**
+
+::: slides
+[Slides](https://face-it-project.github.io/R_workshop/course_material/_slides/plots_2_facets.html)
+:::
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/_slides/plots_2_facets.qmd)
+:::
+:::
+
+::: application-exercise
+**Oh yeah. It's all coming together.**
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/exercises/plots_2_facets.R)
+:::
+:::
+
+::: slide-deck
+**Plotting 3: Colours and stats**
+
+::: slides
+[Slides](https://face-it-project.github.io/R_workshop/course_material/_slides/plots_3_colour.html)
+:::
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/_slides/plots_3_colour.qmd)
+:::
+:::
+
+::: application-exercise
+**It's a colourful life.**
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/exercises/plots_3_colour.R)
+:::
+:::
+
+## DIY figures
+
+Today we learned the basics of **`ggplot2`**, how to facet, how to brew colours, and how to plot stats. That's a lot of stuff to remember! Which is why we will now spend the rest of Day 3 putting our new found skills to use. Please group up as you see fit to produce your very own **`ggplot2`** figures. We've not yet learned how to manipulate/tidy up our data so it may be challenging to grab any dataset and make it work. To that end we recommend using either the `sst_NOAA` dataset we saw on Day 1, or `penguins`. You are of course free to use whatever dataset(s) you would like, including your own. The goal by the end of today is to have created at least two figures (first prize for four figures) and join them together via faceting. We will be walking the room to help with any issues that may arise.
+

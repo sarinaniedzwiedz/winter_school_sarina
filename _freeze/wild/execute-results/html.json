@@ -1,0 +1,16 @@
+{
+  "hash": "97154a101464549d526a0ae7c4eaafe8",
+  "result": {
+    "markdown": "---\ntitle: \"Wild Data\"\neditor: source\n---\n\n::: {.cell}\n\n:::\n\n\nWhen we start out with the processes of finding data 'in the wild' and sourcing them it can feel very overwhelming. With a few considerations however we can drastically cut down on the feelings of uncertainty that enshroud this process. For starters, the vast majority of the environmental and biological data that we may want (on a global scale, local scale can be a bit more specific) can be found in just a handful of places. The methods for accessing these data are also not as varied as they may first appear. The two presentations+exercises in this unit will cover 1) where we may find the majority of the wild data we may need, and 2) the most common methods of accessing those data.",
+    "supporting": [
+      "wild_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

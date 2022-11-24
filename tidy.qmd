@@ -1,0 +1,77 @@
+---
+title: "Tidy Data"
+editor: source
+---
+
+The [Tidyverse](http://tidyverse.org) is a collection of R packages that adhere to the *tidy data* principles of data analysis and graphing. The purpose of these packages is to make working with data more efficient. The core Tidyverse packages were created by Hadley Wickham, but over the years others have added more to the collective, which has significantly expanded our data analytical capabilities through improved ease of use and efficiency. The Tidyverse packages can be loaded collectively by calling the **`tidyverse`** package, as we have seen throughout this workshop. Over the following three slide decks and exercises we will se a range of basic to intermediate methods of wrangling data. From tidy examples to how to deal with messier data.
+
+```{r tidy-lib, message=FALSE, warning=FALSE, eval=FALSE}
+library(tidyverse)
+```
+
+## Slides and application exercises
+
+::: slide-deck
+**Tidy 1: Wrangling**
+
+::: slides
+[Slides](https://face-it-project.github.io/R_workshop/course_material/_slides/tidy_1_wrangle.html)
+:::
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/_slides/tidy_1_wrangle.qmd)
+:::
+:::
+
+::: application-exercise
+**Woooo there!**
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/exercises/tidy_1_wrangle.R)
+:::
+:::
+
+::: slide-deck
+**Tidy 2: Taming**
+
+::: slides
+[Slides](https://face-it-project.github.io/R_workshop/course_material/_slides/tidy_2_tame.html)
+:::
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/_slides/tidy_2_tame.qmd)
+:::
+:::
+
+::: application-exercise
+**Settle down now**
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/exercises/tidy_2_tame.R)
+:::
+:::
+
+::: slide-deck
+**Tidy 3: Domesticating**
+
+::: slides
+[Slides](https://face-it-project.github.io/R_workshop/course_material/_slides/tidy_3_domesticate.html)
+:::
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/_slides/tidy_3_domesticate.qmd)
+:::
+:::
+
+::: application-exercise
+**Whose a good data!?**
+
+::: source
+[Source](https://github.com/FACE-IT-project/R_workshop/tree/main/course_material/exercises/tidy_3_domesticate.R)
+:::
+:::
+
+## DIY tidy data
+
+Now that we have learned the code for basic to intermediate **tidy analyses**, let's apply this to our own data. Find a dataset somewhere on your computer, load, wrangle, and analyse it in a way that is interesting to you. A particularly interesting idea is to use the code we've learned thus far to recreate an analysis + visualisation from an old assignment, project, or publication that we performed manually in Excel (or something similar).
+

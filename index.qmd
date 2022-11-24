@@ -1,0 +1,136 @@
+---
+title: "Welcome"
+editor: source
+sidebar: false
+toc-depth: 2
+link-external-newwindow: true
+---
+
+![](images/FACE-IT_Logo_900.png){style="float: right;" fig-align="right" width="250"}
+
+This website contains the information and course content for the 2022 FACE-IT School 'A **R**oundtrip From Data Handling to Data Presentation'. The source code for which is available on [GitHub](https://github.com/FACE-IT-project/R_workshop).
+
+The aim of this workshop is to guide one through the use of R via RStudio for the analysis of environmental and biological data, with a focus on the Arctic. This workshop is ideal for eco/biologists new to R or who have limited experience, but should be useful to more advanced useRs as well. This workshop is intentionally selective, rather than providing a general overview of R. It will not go into hardcore statistics, but rather focuses on what will be useful to eco/biologists who have an interest in statistics, and use R frequently. The emphasis is thus on the steps required to source, analyse, and visualise data in R, rather than focusing on the statistical theory.
+
+## Overview
+
+The core of the teaching content is laid out over a five-day period. This is preceded by two half days (Day 1-2) to ensure that everyone has R + RStudio and Git + Github setup correctly on their computers. Everything learned over the five days of instruction is then put to use by a two day group project to create a policy brief based on real-world data. The workshop is designed to begin simply and slowly to impart the basics of using R. It then gathers pace, so that by the end we are doing intermediate level analyses and visualisations on data we have sourced ourselves. On the first full day of instruction (Day 3), we consider the philosophy of data visualisation (i.e the grammar of graphics). Day 4 focuses on creating maps, concluding with the Arctic. Day 5 will see us coming to terms with the necessities of tidy data. On Day 6 we venture out into the wild to learn how to tame data for ourselves. And Day 7 ties it all back together. The workshop is case-study driven, using data and examples primarily from a background in the marine sciences and real life situations. There is no homework, but there are in class assignments at the end of each day.
+
+Don't worry if you feel overwhelmed and do not follow everything at every point during the Workshop; that is totally natural with learning a new and powerful program. Remember that you have the notes and material to go through the exercises later at your own pace; an instructor will also be walking the room during sessions and breaks so that they can answer questions one on one. It is the hope that this Workshop gives you the confidence to start incorporating R into your daily workflow, and if you are already a useR, it is the hope that it will expose you to some new ways of doing things.
+
+Finally, bear in mind that there are many, many, many ways to accomplish the same task in R. The methods presented in this workshop are just one, but you will learn as you gain more experience with programming that there are many ways to get the right answer or to accomplish the same task.
+
+## Venue, date and time
+
+This workshop will take place from **18 November -- 28 November 2022**, **9:00--17:00**, at the Wadden Sea Station (AWI) on Sylt, Germany. Each day will have two 15 minute tea breaks and one hour for lunch. The 18th and 28th are set aside for travel, with no instruction planned on these dates. Note also that the first Saturday and Sunday are half days, devoted to managing administrative non-coding work (e.g. setting up R, RStudio, Git, and GitHub).
+
+## Course outline
+
+### Day 0 *2022-11-18* -- Arrival
+
+-   Arrive in Sylt before 16:00 to get checked in at research station
+-   Social dinner before start of workshop
+
+### Day 1 *2022-11-19* -- R + RStudio
+
+-   Interactive Session: Preliminaries
+-   Interactive Session: R and RStudio functioning on all machines
+-   -- break --
+-   Interactive Session: Introduction to R and RStudio
+-   Exercise: It which shall not be named
+-   -- lunch/end --
+
+### Day 2 *2022-11-20* -- Git + GitHub
+
+-   Interactive Session: Git and Github functioning on all machines
+-   -- break --
+-   Exercise: Collaboration via GitHub
+-   -- lunch/end --
+
+### Day 3 *2022-11-21* -- Plots
+
+-   Presentation: The basics of **`ggplot2`**
+-   Exercise: Basics
+-   -- break --
+-   Presentation: Faceting figures in **`ggplot2`**
+-   Exercise: Facets
+-   -- lunch --
+-   Presentation: Brewing colours in **`ggplot2`**
+-   Exercise: Colours
+-   -- break --
+-   Interactive Session: R workflow - I
+-   Assignment: DIY figures
+-   -- end --
+
+### Day 4 *2022-11-22* -- Maps
+
+-   Presentation: Mapping with **`ggplot2`**
+-   Exercise: Basic maps
+-   -- break --
+-   Presentation: Mapping with style
+-   Exercise: Fancy maps
+-   -- lunch --
+-   Presentation: Mapping the Arctic
+-   Exercise: Polar projections
+-   -- break --
+-   Interactive Session: R workflow - II
+-   Assignment: DIY maps
+-   -- end --
+
+### Day 5 *2022-11-23* -- Tidy Data
+
+-   Presentation: Wrangling data
+-   Exercise: Tidy data
+-   -- break --
+-   Presentation: Taming data
+-   Exercise: Tidier data
+-   -- lunch --
+-   Presentation: Domesticating data
+-   Exercise: Tidiest data
+-   -- break --
+-   Interactive Session: R workflow - III
+-   Assignment: DIY tidy data
+-   -- end --
+
+### Day 6 *2022-11-24* -- Wild Data
+
+-   Presentation: Roaming data
+-   Exercise: Wild and free
+-   -- break --
+-   Presentation: Local data
+-   Exercise: Full analyses
+-   -- lunch --
+-   Presentation: Guest lecture on policy briefs
+-   -- break --
+-   Assignment: Choose a policy brief topic and source wild data
+-   -- end --
+
+### Day 7 *2022-11-25* -- Recap
+
+-   Presentation: Recap
+-   Interactive Session: Q & A for policy brief choices
+-   -- break --
+-   Interactive Session: Open Floor
+-   -- lunch --
+-   Interactive Session: More Open Floor
+-   -- end --
+
+### Day 8 *2022-11-26* -- Policy brief
+
+-   Begin working on policy briefs
+
+### Day 9 *2022-11-27* -- Policy brief
+
+-   Finish policy briefs
+
+### Day 0 *2022-11-28* -- Departure
+
+-   Check out of accommodation by 08:00
+
+## Acknowledements
+
+![](images/h2020.png){style="float: left;" fig-align="left" width="500"}
+
+This workshop was developed as a contribution of WP1 to the [FACE-IT project](https://www.face-it-project.eu/). FACE-IT has received funding from the European Union's Horizon 2020 research and innovation programme under grant agreement no. 869154.
+
+Note that much of the content in this workshop was developed from the [BCBC honours class](https://robwschlegel.github.io/Intro_R_Workshop/) taught at the University of the Western Cape in South Africa.

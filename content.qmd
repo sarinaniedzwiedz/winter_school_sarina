@@ -1,0 +1,10 @@
+---
+title: "Content"
+editor: source
+---
+
+The content for this workshop is organized into four primary units: __Plotting in R__, __Mapping in R__, __Tidy Data__, and __Wild Data__. A __Summary__ provides a recap of the information from the four units and some additional parting resources. There is also a page providing perspective on best practices for __Workflows in R__. The resources grouped into each unit may be accessed by the table of contents (TOC) on the left of this page.
+
+During the workshop there will be a guest lecture on the creation of a __Policy Brief__. This will be followed by a two day hands-on session where attendees will break into small groups to develop a policy brief by sourcing data, cleaning it, analysing it, plotting/mapping it, and writing up a brief based on their findings.
+
+Lastly, there are some __Bonus__ materials provided here for further exploration by the interested researchers.
